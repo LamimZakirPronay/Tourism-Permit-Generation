@@ -12,6 +12,7 @@ class UserController extends Controller
     public function index()
     {
         $users = User::orderBy('name')->get();
+
         return view('admin.users.index', compact('users'));
     }
 
@@ -24,29 +25,29 @@ class UserController extends Controller
     {
         // 1. Validation - Include ALL fields from your military registration form
         $data = $request->validate([
-            'ba_no'              => 'required|string|unique:users,ba_no',
-            'rank'               => 'required|string',
-            'corps'              => 'required|string',
-            'name'               => 'required|string|max:255',
-            'email'              => 'required|email|unique:users,email',
-            'unit'               => 'required|string',
-            'formation'          => 'nullable|string',
-            'appointment'        => 'required|string',
-            'contact_no'         => 'nullable|string',
-            'blood_group'        => 'required|string',
+            'ba_no' => 'required|string|unique:users,ba_no',
+            'rank' => 'required|string',
+            'corps' => 'required|string',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'unit' => 'required|string',
+            'formation' => 'nullable|string',
+            'appointment' => 'required|string',
+            'contact_no' => 'nullable|string',
+            'blood_group' => 'required|string',
             'date_of_commission' => 'nullable|date',
-            'role'               => 'required|in:admin,staff',
-            'password'           => 'required|min:8',
+            'role' => 'required|in:admin,staff',
+            'password' => 'required|min:8',
         ]);
 
         // 2. Hash the password
         $data['password'] = Hash::make($data['password']);
-        
+
         // 3. Create User (Ensure these fields are in your User Model's $fillable array)
         User::create($data);
 
         return redirect()->route('admin.users.index')
-                         ->with('success', 'Personnel profile initialized successfully!');
+            ->with('success', 'Personnel profile initialized successfully!');
     }
 
     public function edit(User $user)
@@ -58,23 +59,23 @@ class UserController extends Controller
     {
         // 1. Validation - Similar to store, but allow unique email/ba_no for current user
         $data = $request->validate([
-            'ba_no'              => 'required|string|unique:users,ba_no,' . $user->id,
-            'rank'               => 'required|string',
-            'corps'              => 'required|string',
-            'name'               => 'required|string|max:255',
-            'email'              => 'required|email|unique:users,email,' . $user->id,
-            'unit'               => 'required|string',
-            'formation'          => 'nullable|string',
-            'appointment'        => 'required|string',
-            'contact_no'         => 'nullable|string',
-            'blood_group'        => 'required|string',
+            'ba_no' => 'required|string|unique:users,ba_no,'.$user->id,
+            'rank' => 'required|string',
+            'corps' => 'nullable|string',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,'.$user->id,
+            'unit' => 'required|string',
+            'formation' => 'nullable|string',
+            'appointment' => 'nullable|string',
+            'contact_no' => 'nullable|string',
+            'blood_group' => 'required|string',
             'date_of_commission' => 'nullable|date',
-            'role'               => 'required|in:admin,staff',
-            'password'           => 'nullable|min:8',
+            'role' => 'required|in:admin,staff',
+            'password' => 'nullable|min:8',
         ]);
 
         // 2. Handle Password update logic
-        if (!empty($data['password'])) {
+        if (! empty($data['password'])) {
             $data['password'] = Hash::make($data['password']);
         } else {
             unset($data['password']);
@@ -83,7 +84,7 @@ class UserController extends Controller
         $user->update($data);
 
         return redirect()->route('admin.users.index')
-                         ->with('success', 'User profile updated successfully!');
+            ->with('success', 'User profile updated successfully!');
     }
 
     public function destroy(User $user)
@@ -93,14 +94,15 @@ class UserController extends Controller
         }
 
         $user->delete();
+
         return redirect()->route('admin.users.index')
-                         ->with('success', 'User access revoked and profile deactivated.');
+            ->with('success', 'User access revoked and profile deactivated.');
     }
 
     public function reset2fa(User $user)
     {
         $user->update(['google2fa_secret' => null]);
-        
+
         return back()->with('success', "Security reset for {$user->name}. 2FA cleared.");
     }
 }

@@ -3,100 +3,118 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Permit;
 use App\Models\TourGuide;
 use Illuminate\Http\Request;
-use App\Models\Permit;
+use Illuminate\Support\Facades\Storage;
 
 class TourGuideController extends Controller
 {
-    /**
-     * Display a listing of the resource (All Guides).
-     */
     public function index()
     {
         $guides = TourGuide::orderBy('name')->get();
+
         return view('admin.guides.index', compact('guides'));
     }
 
-    /**
-     * Show the form for creating a new resource (Add Guide).
-     */
     public function create()
     {
         return view('admin.guides.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
+            'parent_name' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:5',
+            'marital_status' => 'nullable|string',
+            'spouse_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|unique:tour_guides,email',
             'contact' => 'required|string|max:20',
+            'emergency_contact' => 'nullable|string|max:20',
             'license_id' => 'required|string|max:50|unique:tour_guides,license_id',
+            'nid_number' => 'required|string|max:50|unique:tour_guides,nid_number',
+            'address' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
             'is_active' => 'nullable|boolean',
         ]);
 
-        $validatedData['is_active'] = $request->has('is_active'); // Convert checkbox to boolean
+        if ($request->hasFile('attachment')) {
+            $validatedData['attachment_path'] = $request->file('attachment')->store('guides/attachments', 'public');
+        }
+
+        $validatedData['is_active'] = $request->has('is_active');
 
         TourGuide::create($validatedData);
 
-        return redirect()->route('admin.guides.index')
-                         ->with('success', 'Tour Guide added successfully!');
+        return redirect()->route('admin.guides.index')->with('success', 'Tour Guide added successfully!');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(TourGuide $guide)
     {
         return view('admin.guides.edit', compact('guide'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, TourGuide $guide)
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
+            'parent_name' => 'nullable|string|max:255',
+            'blood_group' => 'nullable|string|max:10',
+            'marital_status' => 'nullable|string',
+            'spouse_name' => 'nullable|string|max:255',
+            'email' => 'nullable|email|unique:tour_guides,email,'.$guide->id,
             'contact' => 'required|string|max:20',
-            'email' => 'nullable|email|unique:guides',
-            'nid_number' => 'required|unique:guides',
-            'attachment' => 'nullable|file|mimes:pdf,jpg,png|max:2048',
-            'license_id' => 'required|string|max:50|unique:tour_guides,license_id,' . $guide->id,
-            'is_active' => 'nullable|boolean',
+            'emergency_contact' => 'nullable|string|max:20',
+            'license_id' => 'required|string|max:50|unique:tour_guides,license_id,'.$guide->id,
+            'nid_number' => 'required|string|max:50|unique:tour_guides,nid_number,'.$guide->id,
+            'address' => 'nullable|string',
+            'attachment' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'is_active' => 'nullable',
         ]);
+
+        // Handle File Upload
+        if ($request->hasFile('attachment')) {
+            // Delete old file if exists
+            if ($guide->attachment_path) {
+                Storage::disk('public')->delete($guide->attachment_path);
+            }
+            $validatedData['attachment_path'] = $request->file('attachment')->store('guides/attachments', 'public');
+        }
 
         $validatedData['is_active'] = $request->has('is_active');
 
         $guide->update($validatedData);
 
-        return redirect()->route('admin.guides.index')
-                         ->with('success', 'Tour Guide updated successfully!');
+        return redirect()->route('admin.guides.index')->with('success', 'Tour Guide updated successfully!');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(TourGuide $guide)
     {
-        // NOTE: In a real application, you should check if this guide is 
-        // linked to any active permits before deleting.
-        $guide->delete();
+        try {
+            // 1. Delete the attachment from storage if it exists
+            if ($guide->attachment_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($guide->attachment_path);
+            }
 
-        return redirect()->route('admin.guides.index')
-                         ->with('success', 'Tour Guide deleted successfully!');
+            // 2. Attempt to delete the record
+            $guide->delete();
+
+            return redirect()->route('admin.guides.index')
+                ->with('success', 'Tour Guide deleted successfully!');
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            // 3. Handle Foreign Key Constraint errors (if guide is used in a permit)
+            return redirect()->route('admin.guides.index')
+                ->with('error', 'Unable to delete: This guide is associated with existing permits.');
+        }
     }
 
     public function listPermits()
-{
-    // Eager load relationships to prevent slow loading
-    $permits = Permit::with(['tourGuide', 'teamMembers'])->latest()->get();
-    
-    return view('admin.permit.index', compact('permits'));
-}
+    {
+        $permits = Permit::with(['tourGuide', 'teamMembers'])->latest()->get();
 
-
+        return view('admin.permit.index', compact('permits'));
+    }
 }

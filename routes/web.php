@@ -1,15 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\TourismPermitController;
-use App\Http\Controllers\Admin\TourGuideController;
-use App\Http\Controllers\Admin\DriverController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Admin\AreaController;
+use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\DriverController;
+use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\TourGuideController;
+use App\Http\Controllers\Admin\TwoFactorController;
+use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\TourismPermitController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +22,7 @@ Route::post('/permit', [TourismPermitController::class, 'store'])->name('permit.
 // UUID verification route (Public)
 Route::get('/permit/verify/{permit}', [TourismPermitController::class, 'verify'])
     ->name('permit.verify')
-    ->whereUuid('permit'); 
+    ->whereUuid('permit');
 
 /*
 |--------------------------------------------------------------------------
@@ -39,15 +39,15 @@ Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    
-    // --- 2FA Setup & Verification (Required before accessing dashboard) ---
+
+    // --- 2FA Setup & Verification ---
     Route::get('/2fa/setup', [TwoFactorController::class, 'setup'])->name('2fa.setup');
     Route::get('/2fa/challenge', [TwoFactorController::class, 'challenge'])->name('2fa.challenge');
     Route::post('/2fa/verify', [TwoFactorController::class, 'verify'])->name('2fa.verify');
 
     // --- Fully Protected Routes (Require Auth + 2FA) ---
     Route::middleware(['2fa'])->group(function () {
-        
+
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
@@ -58,11 +58,15 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         // Tour Guide, Driver, and Area Management
         Route::resource('guides', TourGuideController::class);
         Route::resource('drivers', DriverController::class);
-        Route::resource('areas', AreaController::class); // Added here correctly
+        Route::resource('areas', AreaController::class);
 
         // --- Permit Management ---
         Route::get('permit', [TourismPermitController::class, 'index'])->name('permit.index');
-        
+
+        // Status Update Route (Fixed Name and Controller)
+        // This will be accessible via route('admin.permit.update-status')
+        Route::patch('permit/{id}/status-update', [TourismPermitController::class, 'updateStatus'])->name('permit.update-status');
+
         // Export Route
         Route::get('permit/export', [TourismPermitController::class, 'exportAll'])->name('permit.export.all');
 
@@ -73,7 +77,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::get('permit/{permit}', [TourismPermitController::class, 'show'])->name('permit.show')->whereUuid('permit');
         Route::get('permit/{permit}/edit', [TourismPermitController::class, 'edit'])->name('permit.edit')->whereUuid('permit');
         Route::put('permit/{permit}', [TourismPermitController::class, 'update'])->name('permit.update')->whereUuid('permit');
-        
+
         // Custom Patch Actions
         Route::patch('permit/{permit}/exit', [TourismPermitController::class, 'markAsExited'])->name('permit.exit')->whereUuid('permit');
         Route::patch('permit/{permit}/close', [TourismPermitController::class, 'closePermit'])->name('permit.close')->whereUuid('permit');
