@@ -1,0 +1,30 @@
+# Ignore dependencies
+/node_modules
+/vendor
+
+# Ignore environment & sensitive data
+.env
+.env.backup
+.env.production
+/storage/*.key
+
+# Ignore compiled assets and logs
+/public/hot
+/public/storage
+/storage/*.log
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/app/public/*
+
+# Ignore IDE & OS files
+.phpunit.result.cache
+.vscode/
+.idea/
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+.DS_Store
