@@ -15,7 +15,15 @@
         .info-value { color: #212529; font-weight: 600; }
         .member-table thead { background-color: #f1f3f5; }
         .status-pill { padding: 8px 20px; border-radius: 50px; font-weight: bold; letter-spacing: 1px; }
-        .payment-box { border-left: 5px solid #e2136e; } /* bKash pink color */
+        .payment-box { border-left: 5px solid #e2136e; }
+        .daily-token-badge { 
+            background: rgba(255,255,255,0.2); 
+            border: 1px dashed white; 
+            padding: 5px 15px; 
+            border-radius: 8px; 
+            display: inline-block;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -25,6 +33,12 @@
         <div class="header-status text-center">
             <i class="bi bi-shield-check" style="font-size: 4rem;"></i>
             <h2 class="mt-2 fw-bold">AUTHENTIC PERMIT</h2>
+            
+            <div class="daily-token-badge">
+                <small class="d-block opacity-75">DAILY TOKEN NO</small>
+                <span class="fs-4 fw-black">#{{ $permit->daily_serial }}</span>
+            </div>
+
             <div class="mt-3">
                 <span class="status-pill bg-white text-success">
                     <i class="bi bi-check-circle-fill"></i> {{ strtoupper($permit->status ?? 'ACTIVE') }}
@@ -36,7 +50,7 @@
             <div class="row mb-4 text-center">
                 <div class="col-6 border-end">
                     <div class="info-label">Permit ID</div>
-                    <div class="info-value">#{{ $permit->id }}</div>
+                    <div class="info-value">#{{ str_pad($permit->id, 6, '0', STR_PAD_LEFT) }}</div>
                 </div>
                 <div class="col-6">
                     <div class="info-label">Issued On</div>
@@ -60,7 +74,7 @@
                 </div>
                 <div class="col-12 mt-2">
                     <span class="badge bg-success-subtle text-success border border-success px-3">
-                        <i class="bi bi-patch-check"></i> Payment {{ ucfirst($permit->payment_status) }}
+                        <i class="bi bi-patch-check"></i> Payment Success
                     </span>
                 </div>
             </div>
@@ -72,8 +86,11 @@
                     <div class="info-value">{{ $permit->group_name }}</div>
                 </div>
                 <div class="col-md-6">
-                    <div class="info-label">Restricted Area</div>
-                    <div class="info-value text-danger">{{ $permit->area_name }}</div>
+                    <div class="info-label">Restricted Area(s)</div>
+                    <div class="info-value text-danger">
+                        {{-- FIXED: Accessing collection of areas instead of single property --}}
+                        {{ $permit->areas->pluck('name')->implode(', ') }}
+                    </div>
                 </div>
                 <div class="col-md-6">
                     <div class="info-label">Arrival</div>

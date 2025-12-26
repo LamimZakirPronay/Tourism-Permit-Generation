@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -25,6 +26,7 @@
         .bg-success-subtle { background-color: #f0fdf4 !important; }
         .bg-warning-subtle { background-color: #fffbeb !important; }
         .bg-danger-subtle { background-color: #fef2f2 !important; }
+        .bg-indigo-subtle { background-color: #e0e7ff !important; }
     </style>
 </head>
 <body>
@@ -120,7 +122,7 @@
         {{-- Resource Management Sidebar --}}
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 p-4 bg-white h-100">
-                <h5 class="fw-bold mb-4 text-dark">Quick Actions</h5>
+                <h5 class="fw-bold mb-4 text-dark">Resource Control</h5>
                 
                 {{-- User Control --}}
                 <div class="d-flex align-items-center p-3 mb-3 rounded-3 border bg-light-subtle">
@@ -129,7 +131,17 @@
                         <h6 class="mb-0 fw-bold small">User Control</h6>
                         <small class="text-muted">{{ $counts['users'] }} Accounts</small>
                     </div>
-                    <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-primary rounded-pill">View</a>
+                    <a href="{{ route('admin.users.index') }}" class="btn btn-sm btn-primary rounded-pill px-3">View</a>
+                </div>
+
+                {{-- RESTORED: Restricted Areas Section --}}
+                <div class="d-flex align-items-center p-3 mb-3 rounded-3 border bg-light-subtle">
+                    <div class="icon-box bg-indigo-subtle text-indigo me-3" style="color: #4338ca;"><i class="bi bi-geo-fill"></i></div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-0 fw-bold small">Restricted Areas</h6>
+                        <small class="text-muted">{{ $counts['areas'] ?? 0 }} Registered</small>
+                    </div>
+                    <a href="{{ route('admin.areas.index') }}" class="btn btn-sm btn-indigo rounded-pill px-3 text-white" style="background-color: #4338ca;">View</a>
                 </div>
 
                 {{-- Tour Guides --}}
@@ -139,29 +151,21 @@
                         <h6 class="mb-0 fw-bold small">Tour Guides</h6>
                         <small class="text-muted">{{ $counts['guides'] }} Active</small>
                     </div>
-                    <a href="{{ route('admin.guides.index') }}" class="btn btn-sm btn-success rounded-pill">View</a>
+                    <a href="{{ route('admin.guides.index') }}" class="btn btn-sm btn-success rounded-pill px-3">View</a>
                 </div>
 
-                {{-- Driver Section --}}
-                <div class="d-flex align-items-center p-3 mb-3 rounded-3 border bg-light-subtle">
-                    <div class="icon-box bg-warning-subtle text-warning me-3"><i class="bi bi-truck"></i></div>
+          
+
+                {{-- Site Settings --}}
+                <div class="d-flex align-items-center p-3 mb-4 rounded-3 border bg-light-subtle">
+                    <div class="icon-box bg-dark-subtle text-dark me-3"><i class="bi bi-gear-fill"></i></div>
                     <div class="flex-grow-1">
-                        <h6 class="mb-0 fw-bold small">Drivers</h6>
-                        <small class="text-muted">{{ $counts['drivers'] }} Records</small>
+                        <h6 class="mb-0 fw-bold small">Site Settings</h6>
+                        <small class="text-muted">Configuration</small>
                     </div>
-                    <a href="{{ route('admin.drivers.index') }}" class="btn btn-sm btn-warning rounded-pill">View</a>
+                    <a href="{{ route('admin.settings.edit') }}" class="btn btn-sm btn-dark rounded-pill px-3">Edit</a>
                 </div>
 
-
-{{-- Site Settings (RESTORED) --}}
-<div class="d-flex align-items-center p-3 mb-3 rounded-3 border bg-light-subtle">
-    <div class="icon-box bg-dark-subtle text-dark me-3"><i class="bi bi-gear-fill"></i></div>
-    <div class="flex-grow-1">
-        <h6 class="mb-0 fw-bold small">Site Settings</h6>
-        <small class="text-muted">Configuration</small>
-    </div>
-    <a href="{{ route('admin.settings.edit') }}" class="btn btn-sm btn-dark rounded-pill">Edit</a>
-</div>
                 <div class="mt-auto">
                     <a href="{{ route('admin.permit.index') }}" class="btn btn-dark w-100 py-3 fw-bold rounded-3 shadow-sm">
                         <i class="bi bi-file-earmark-text me-2"></i>Review All Permits

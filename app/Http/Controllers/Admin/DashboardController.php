@@ -19,11 +19,15 @@ class DashboardController extends Controller
     public function index()
     {
         // 1. Resource Counts (Total System Resources)
-        $counts = [
-            'users' => User::count(),
-            'guides' => TourGuide::count(),
-            'drivers' => Driver::count(),
-        ];
+     
+        // 1. Resource Counts (Active System Resources)
+$counts = [
+           'users'   => \App\Models\User::count(),
+    'guides'  => \App\Models\TourGuide::where('is_active', '1')->count(),
+    'areas'   => \App\Models\Area::where('is_active', '1')->count(),
+
+];
+
 
         // 2. Headcount Analytics (Based on Individual Team Members)
         $permitStats = [
@@ -81,7 +85,7 @@ class DashboardController extends Controller
         //  ->get();
 
         // 7. Pass all data to the Admin Dashboard view
-        return view('Admin.dashboard', compact(
+        return view('admin.dashboard', compact(
             'counts',
             'permitStats',
             'totalVisitors',

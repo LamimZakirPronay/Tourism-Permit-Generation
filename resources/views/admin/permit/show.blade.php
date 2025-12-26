@@ -36,10 +36,19 @@
                             <label class="details-label">Group Name</label>
                             <div class="details-value">{{ $permit->group_name }}</div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="details-label">Restricted Area</label>
-                            <div class="details-value text-primary">{{ $permit->area_name }}</div>
-                        </div>
+                       {{-- Replacement for the Restricted Area Column --}}
+<div class="col-md-3">
+    <label class="details-label">Restricted Areas</label>
+    <div class="details-value">
+        @forelse($permit->areas as $area)
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1 mb-1">
+                <i class="bi bi-geo-alt-fill small"></i> {{ $area->name }}
+            </span>
+        @empty
+            <span class="text-danger small">No areas selected</span>
+        @endforelse
+    </div>
+</div>
                         <div class="col-md-3">
                             <label class="details-label">Assigned Tour Guide</label>
                             <div class="details-value">{{ $permit->tourGuide->name ?? 'N/A' }}</div>
@@ -84,7 +93,42 @@
                     </div>
                 </div>
             </div>
-
+<div class="card mt-4">
+    <div class="card-header">
+        <h4>Vehicle & Driver Details</h4>
+    </div>
+    <div class="card-body">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Ownership</th>
+                    <th>Reg. No</th>
+                    <th>Driver Name</th>
+                    <th>Contact</th>
+                    <th>License / NID</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($permit->vehicles as $index => $vehicle)
+                <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $vehicle->vehicle_ownership }}</td>
+                    <td>{{ $vehicle->vehicle_reg_no }}</td>
+                    <td>{{ $vehicle->driver_name }}</td>
+                    <td>{{ $vehicle->driver_contact }}</td>
+                    <td>
+                        <small>
+                            Lic: {{ $vehicle->driver_license_no ?? 'N/A' }} <br>
+                            NID: {{ $vehicle->driver_nid ?? 'N/A' }}
+                        </small>
+                    </td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
             <div class="card main-card border-0 shadow-sm mb-4">
                 <div class="card-header bg-white border-bottom py-3 ps-4">
                     <h6 class="fw-bold mb-0 text-primary uppercase small letter-spacing">Leader / Point of Contact</h6>

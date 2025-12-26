@@ -19,10 +19,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [TourismPermitController::class, 'create'])->name('permit.create');
 Route::post('/permit', [TourismPermitController::class, 'store'])->name('permit.store');
 
-// UUID verification route (Public)
-Route::get('/permit/verify/{permit}', [TourismPermitController::class, 'verify'])
-    ->name('permit.verify')
-    ->whereUuid('permit');
+// Success page after submission
+Route::get('/permit/success/{permit}', [TourismPermitController::class, 'success'])
+    ->name('permit.success');
+
+// Verification route (Public QR Scan)
+Route::get('/permit/verify/{id}', [TourismPermitController::class, 'verify'])
+    ->name('permit.verify');
 
 /*
 |--------------------------------------------------------------------------
@@ -61,26 +64,26 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         Route::resource('areas', AreaController::class);
 
         // --- Permit Management ---
-        Route::get('permit', [TourismPermitController::class, 'index'])->name('permit.index');
-
-        // Status Update Route (Fixed Name and Controller)
-        // This will be accessible via route('admin.permit.update-status')
-        Route::patch('permit/{id}/status-update', [TourismPermitController::class, 'updateStatus'])->name('permit.update-status');
-
-        // Export Route
+        Route::get('permit/index', [TourismPermitController::class, 'index'])->name('permit.index');
+        Route::get('permit/closing-panel', [TourismPermitController::class, 'closingPanel'])->name('permit.closing-panel');
         Route::get('permit/export', [TourismPermitController::class, 'exportAll'])->name('permit.export.all');
 
-        // Specialized Panels
-        Route::get('permit/closing-panel', [TourismPermitController::class, 'closingPanel'])->name('permit.closing-panel');
+        // Permit Actions
+        Route::group(['prefix' => 'permit/{permit}'], function () {
+            Route::get('/', [TourismPermitController::class, 'show'])->name('permit.show');
+            Route::get('/edit', [TourismPermitController::class, 'edit'])->name('permit.edit');
+            Route::put('/', [TourismPermitController::class, 'update'])->name('permit.update');
 
-        // Resource actions with UUID constraints
-        Route::get('permit/{permit}', [TourismPermitController::class, 'show'])->name('permit.show')->whereUuid('permit');
-        Route::get('permit/{permit}/edit', [TourismPermitController::class, 'edit'])->name('permit.edit')->whereUuid('permit');
-        Route::put('permit/{permit}', [TourismPermitController::class, 'update'])->name('permit.update')->whereUuid('permit');
+            // PDF Downloads
+            Route::get('/download', [TourismPermitController::class, 'downloadPDF'])->name('permit.download');
 
-        // Custom Patch Actions
-        Route::patch('permit/{permit}/exit', [TourismPermitController::class, 'markAsExited'])->name('permit.exit')->whereUuid('permit');
-        Route::patch('permit/{permit}/close', [TourismPermitController::class, 'closePermit'])->name('permit.close')->whereUuid('permit');
+            // NEW: Token PDF Download (Thermal 80mm)
+            Route::get('/tokens-download', [TourismPermitController::class, 'exportIndividualTokensPdf'])->name('permit.tokens.download');
+
+            // Status Actions
+            Route::patch('/status-update', [TourismPermitController::class, 'updateStatus'])->name('permit.update-status');
+            Route::patch('/exit', [TourismPermitController::class, 'markAsExited'])->name('permit.exit');
+        });
 
         // Site Settings
         Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
