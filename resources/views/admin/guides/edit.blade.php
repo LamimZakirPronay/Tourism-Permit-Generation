@@ -23,6 +23,16 @@
                 </div>
             </div>
 
+            @if ($errors->any())
+                <div class="alert alert-danger shadow-sm border-0 mb-4" style="border-radius: 12px;">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form action="{{ route('admin.guides.update', $guide->id) }}" method="POST" enctype="multipart/form-data" class="form-card p-4 p-md-5">
                 @csrf
                 @method('PUT')
@@ -64,11 +74,11 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-4">
                         <label class="form-label">Email Address</label>
-                        <input type="email" name="email" class="form-control" value="{{ old('email', $guide->email) }}">
+                        <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $guide->email) }}">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Primary Contact</label>
-                        <input type="text" name="contact" class="form-control" value="{{ old('contact', $guide->contact) }}" required>
+                        <input type="text" name="contact" class="form-control @error('contact') is-invalid @enderror" value="{{ old('contact', $guide->contact) }}" required>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Emergency Contact</label>
@@ -76,11 +86,11 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">License ID (Unique)</label>
-                        <input type="text" name="license_id" class="form-control" value="{{ old('license_id', $guide->license_id) }}" required>
+                        <input type="text" name="license_id" class="form-control @error('license_id') is-invalid @enderror" value="{{ old('license_id', $guide->license_id) }}" required>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">NID Card Number</label>
-                        <input type="text" name="nid_number" class="form-control" value="{{ old('nid_number', $guide->nid_number) }}" required>
+                        <input type="text" name="nid_number" class="form-control @error('nid_number') is-invalid @enderror" value="{{ old('nid_number', $guide->nid_number) }}" required>
                     </div>
                     <div class="col-12">
                         <label class="form-label">Permanent Address</label>
@@ -92,7 +102,7 @@
                 <div class="row g-3 mb-5">
                     <div class="col-md-8">
                         <label class="form-label">Replace NID / File (Leave blank to keep current)</label>
-                        <input type="file" name="attachment" class="form-control mb-2">
+                        <input type="file" name="attachment" class="form-control mb-2 @error('attachment') is-invalid @enderror">
                         
                         @if($guide->attachment_path)
                             <div class="attachment-preview">

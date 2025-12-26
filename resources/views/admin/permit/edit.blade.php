@@ -3,60 +3,109 @@
 @section('content')
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Edit Permit Management</h1>
-    <a href="{{ route('admin.permit.index') }}" class="d-none d-sm-inline-block btn btn-sm btn-secondary shadow-sm">
-        <i class="fas fa-arrow-left fa-sm text-white-50"></i> Back to Permit List
+    <a href="{{ route('admin.permit.index') }}" class="btn btn-sm btn-secondary shadow-sm">
+        <i class="fas fa-arrow-left fa-sm"></i> Back to Permit List
     </a>
 </div>
 
-<div class="row">
-    <div class="col-xl-12 col-lg-12">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">Modify Permit #{{ $permit->id }} [{{ $permit->group_name }}]</h6>
-                <span class="badge {{ $permit->status == 'active' ? 'badge-success' : 'badge-danger' }} p-2">
-                    {{ strtoupper($permit->status) }}
-                </span>
-            </div>
+{{-- Validation Error Display --}}
+@if ($errors->any())
+    <div class="alert alert-danger border-left-danger alert-dismissible fade show" role="alert">
+        <strong>Update Failed!</strong> Please check the following:
+        <ul class="mt-2 mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+@endif
 
-            <div class="card-body">
-                <form action="{{ route('admin.permit.update', $permit->id) }}" method="POST">
-                    @csrf
-                    @method('PUT')
+<form action="{{ route('admin.permit.update', $permit->id) }}" method="POST">
+    @csrf
+    @method('PUT')
 
-                    <div class="row mb-3">
-                        <div class="col-12"><p class="text-primary font-weight-bold border-bottom pb-1">1. Trip Logistics & Authority</p></div>
+    <div class="row">
+        <div class="col-xl-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Full Edit: Permit #{{ $permit->id }}</h6>
+                    <span class="badge badge-{{ $permit->status == 'cancelled' ? 'danger' : 'success' }} p-2">
+                        CURRENT STATUS: {{ strtoupper($permit->status) }}
+                    </span>
+                </div>
+                <div class="card-body">
+
+                    {{-- 1. Logistics & Status --}}
+                    <div class="row mb-4">
+                        <div class="col-12"><p class="text-primary font-weight-bold border-bottom pb-1">1. Logistics & Status</p></div>
+                        
                         <div class="form-group col-md-4">
                             <label class="small font-weight-bold">Group Name</label>
                             <input type="text" name="group_name" class="form-control" value="{{ old('group_name', $permit->group_name) }}" required>
                         </div>
+
                         <div class="form-group col-md-4">
-                            <label class="small font-weight-bold">Target Restricted Area</label>
-                            <input type="text" name="area_name" class="form-control" value="{{ old('area_name', $permit->area_name) }}" required>
+                            <label class="small font-weight-bold">Arrival Date/Time</label>
+                            <input type="datetime-local" name="arrival_datetime" class="form-control" value="{{ old('arrival_datetime', \Carbon\Carbon::parse($permit->arrival_datetime)->format('Y-m-d\TH:i')) }}">
                         </div>
+
                         <div class="form-group col-md-4">
-                            <label class="small font-weight-bold">Assigned Tour Guide</label>
-                            <select name="tour_guide_id" class="form-control">
-                                @foreach($guides as $guide)
-                                    <option value="{{ $guide->id }}" {{ $permit->tour_guide_id == $guide->id ? 'selected' : '' }}>
-                                        {{ $guide->name }}
-                                    </option>
+                            <label class="small font-weight-bold">Departure Date/Time</label>
+                            <input type="datetime-local" name="departure_datetime" class="form-control" value="{{ old('departure_datetime', \Carbon\Carbon::parse($permit->departure_datetime)->format('Y-m-d\TH:i')) }}">
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label class="small font-weight-bold">Trip Status</label>
+                            <select name="status" class="form-control border-primary font-weight-bold">
+                                @foreach(['to arrive', 'arrived', 'exited', 'cancelled'] as $st)
+                                    <option value="{{ $st }}" {{ old('status', $permit->status) == $st ? 'selected' : '' }}>{{ strtoupper($st) }}</option>
                                 @endforeach
                             </select>
                         </div>
+
                         <div class="form-group col-md-6">
-                            <label class="small font-weight-bold">Arrival Date & Time</label>
-                            <input type="datetime-local" name="arrival_datetime" class="form-control" 
-                                   value="{{ \Carbon\Carbon::parse($permit->arrival_datetime)->format('Y-m-d\TH:i') }}">
+                            <label class="small font-weight-bold">Payment Status</label>
+                            <select name="payment_status" class="form-control">
+                                <option value="1" {{ old('payment_status', $permit->payment_status) == 1 ? 'selected' : '' }}>Completed</option>
+                                <option value="0" {{ old('payment_status', $permit->payment_status) == 0 ? 'selected' : '' }}>Pending</option>
+                            </select>
                         </div>
-                        <div class="form-group col-md-6">
-                            <label class="small font-weight-bold">Departure Date & Time</label>
-                            <input type="datetime-local" name="departure_datetime" class="form-control" 
-                                   value="{{ \Carbon\Carbon::parse($permit->departure_datetime)->format('Y-m-d\TH:i') }}">
+
+                        {{-- Restricted Areas --}}
+                        <div class="col-12 mt-3">
+                            <div class="card border-left-danger shadow-sm">
+                                <div class="card-header py-2 bg-light d-flex justify-content-between align-items-center">
+                                    <h6 class="small font-weight-bold mb-0 text-danger"><i class="fas fa-map-marker-alt"></i> Restricted Areas (Mandatory)</h6>
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="selectAllAreas">
+                                        <label class="custom-control-label small font-weight-bold" for="selectAllAreas">Select All</label>
+                                    </div>
+                                </div>
+                                <div class="card-body py-3" style="max-height: 250px; overflow-y: auto; background-color: #fffafb;">
+                                    <div class="row">
+                                        @php $currentAreaIds = $permit->areas->pluck('id')->toArray(); @endphp
+                                        @foreach($areas as $area)
+                                            <div class="col-md-3 mb-2">
+                                                <div class="custom-control custom-checkbox">
+                                                    <input type="checkbox" name="area_ids[]" class="custom-control-input area-checkbox" id="area_{{ $area->id }}" value="{{ $area->id }}"
+                                                        {{ (in_array($area->id, old('area_ids', $currentAreaIds))) ? 'checked' : '' }}>
+                                                    <label class="custom-control-label small text-dark font-weight-bold" for="area_{{ $area->id }}">{{ $area->name }}</label>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                            @error('area_ids')<span class="text-danger small font-weight-bold">{{ $message }}</span>@enderror
                         </div>
                     </div>
 
-                    <div class="row mb-3">
-                        <div class="col-12"><p class="text-primary font-weight-bold border-bottom pb-1">2. Leader Contact & System Status</p></div>
+                    {{-- 2. Leader Information --}}
+                    <div class="row mb-4">
+                        <div class="col-12"><p class="text-primary font-weight-bold border-bottom pb-1">2. Leader Information</p></div>
                         <div class="form-group col-md-3">
                             <label class="small font-weight-bold">Leader Name</label>
                             <input type="text" name="leader_name" class="form-control" value="{{ old('leader_name', $permit->leader_name) }}">
@@ -66,36 +115,80 @@
                             <input type="text" name="leader_nid" class="form-control" value="{{ old('leader_nid', $permit->leader_nid) }}">
                         </div>
                         <div class="form-group col-md-3">
+                            <label class="small font-weight-bold">Contact Number</label>
+                            <input type="text" name="contact_number" class="form-control" value="{{ old('contact_number', $permit->contact_number) }}">
+                        </div>
+                        <div class="form-group col-md-3">
                             <label class="small font-weight-bold">Email Address</label>
                             <input type="email" name="email" class="form-control" value="{{ old('email', $permit->email) }}">
                         </div>
-                        <div class="form-group col-md-3">
-                            <label class="small font-weight-bold">Phone Number</label>
-                            <input type="text" name="contact_number" class="form-control" value="{{ old('contact_number', $permit->contact_number) }}">
+                    </div>
+
+                    {{-- 3. Dynamic Driver & Vehicle Details --}}
+                    <div class="row mb-4 bg-light p-3 border rounded">
+                        <div class="col-12 d-flex justify-content-between align-items-center border-bottom pb-1 mb-3">
+                            <p class="text-primary font-weight-bold mb-0">3. Driver & Vehicle Details</p>
+                            <button type="button" class="btn btn-sm btn-success" id="add-vehicle">
+                                <i class="fas fa-plus"></i> Add Vehicle
+                            </button>
                         </div>
-                        <div class="form-group col-md-6">
-                            <label class="small font-weight-bold">Permit Status</label>
-                            <select name="status" class="form-control">
-                                <option value="active" {{ $permit->status == 'active' ? 'selected' : '' }}>Active</option>
-                                <option value="completed" {{ $permit->status == 'completed' ? 'selected' : '' }}>Completed</option>
-                                <option value="cancelled" {{ $permit->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                            </select>
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label class="small font-weight-bold">Payment Status</label>
-                            <select name="payment_status" class="form-control">
-                                <option value="completed" {{ $permit->payment_status == 'completed' ? 'selected' : '' }}>Completed</option>
-                                <option value="pending" {{ $permit->payment_status == 'pending' ? 'selected' : '' }}>Pending</option>
-                            </select>
+
+                        <div class="col-12">
+                            <div id="vehicle-container">
+                                @foreach($permit->vehicles as $vIndex => $vehicle)
+                                    <div class="vehicle-row border-bottom mb-4 pb-3" data-index="{{ $vIndex }}">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="badge badge-primary">Vehicle #{{ $vIndex + 1 }}</span>
+                                            <button type="button" class="btn btn-sm btn-danger remove-vehicle">Remove</button>
+                                        </div>
+                                        <div class="row">
+                                            <input type="hidden" name="vehicles[{{ $vIndex }}][id]" value="{{ $vehicle->id }}">
+                                            <div class="form-group col-md-3">
+                                                <label class="small font-weight-bold">Driver Name</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][driver_name]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.driver_name', $vehicle->driver_name) }}" required>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label class="small font-weight-bold">Driver Phone</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][driver_contact]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.driver_contact', $vehicle->driver_contact) }}" required>
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label class="small font-weight-bold">Emergency Phone</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][driver_emergency_contact]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.driver_emergency_contact', $vehicle->driver_emergency_contact) }}">
+                                            </div>
+                                            <div class="form-group col-md-3">
+                                                <label class="small font-weight-bold">Driver NID</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][driver_nid]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.driver_nid', $vehicle->driver_nid) }}">
+                                            </div>
+                                            <div class="form-group col-md-3 mt-2">
+                                                <label class="small font-weight-bold">License No</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][driver_license_no]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.driver_license_no', $vehicle->driver_license_no) }}">
+                                            </div>
+                                            <div class="form-group col-md-3 mt-2">
+                                                <label class="small font-weight-bold">Blood Group</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][driver_blood_group]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.driver_blood_group', $vehicle->driver_blood_group) }}">
+                                            </div>
+                                            <div class="form-group col-md-3 mt-2">
+                                                <label class="small font-weight-bold">Vehicle Ownership</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][vehicle_ownership]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.vehicle_ownership', $vehicle->vehicle_ownership) }}" required>
+                                            </div>
+                                            <div class="form-group col-md-3 mt-2">
+                                                <label class="small font-weight-bold">Vehicle Reg No</label>
+                                                <input type="text" name="vehicles[{{ $vIndex }}][vehicle_reg_no]" class="form-control" value="{{ old('vehicles.'.$vIndex.'.vehicle_reg_no', $vehicle->vehicle_reg_no) }}" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
 
+                    {{-- 4. Team Members List --}}
                     <div class="row mb-3">
-                        <div class="col-12"><p class="text-primary font-weight-bold border-bottom pb-1">3. Detailed Team Member List</p></div>
+                        <div class="col-12"><p class="text-primary font-weight-bold border-bottom pb-1">4. Team Members List</p></div>
                         <div class="col-12">
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped table-sm" width="100%" cellspacing="0">
-                                    <thead class="bg-gray-100 text-dark small font-weight-bold">
+                                <table class="table table-bordered table-striped table-sm">
+                                    <thead class="bg-gray-100 small font-weight-bold">
                                         <tr>
                                             <th>Name</th>
                                             <th>Father's Name</th>
@@ -111,33 +204,24 @@
                                         <tr>
                                             <td>
                                                 <input type="hidden" name="team[{{ $index }}][id]" value="{{ $member->id }}">
-                                                <input type="text" name="team[{{ $index }}][name]" class="form-control form-control-sm" value="{{ $member->name }}">
+                                                <input type="text" name="team[{{ $index }}][name]" class="form-control form-control-sm" value="{{ old('team.'.$index.'.name', $member->name) }}">
                                             </td>
-                                            <td>
-                                                <input type="text" name="team[{{ $index }}][fathers_name]" class="form-control form-control-sm" value="{{ $member->fathers_name }}">
-                                            </td>
-                                            <td>
-                                                <input type="number" name="team[{{ $index }}][age]" class="form-control form-control-sm" value="{{ $member->age }}">
-                                            </td>
+                                            <td><input type="text" name="team[{{ $index }}][fathers_name]" class="form-control form-control-sm" value="{{ old('team.'.$index.'.fathers_name', $member->fathers_name) }}"></td>
+                                            <td><input type="number" name="team[{{ $index }}][age]" class="form-control form-control-sm" value="{{ old('team.'.$index.'.age', $member->age) }}"></td>
                                             <td>
                                                 <select name="team[{{ $index }}][gender]" class="form-control form-control-sm">
-                                                    <option value="Male" {{ $member->gender == 'Male' ? 'selected' : '' }}>Male</option>
-                                                    <option value="Female" {{ $member->gender == 'Female' ? 'selected' : '' }}>Female</option>
+                                                    <option value="Male" {{ old('team.'.$index.'.gender', $member->gender) == 'Male' ? 'selected' : '' }}>Male</option>
+                                                    <option value="Female" {{ old('team.'.$index.'.gender', $member->gender) == 'Female' ? 'selected' : '' }}>Female</option>
                                                 </select>
                                             </td>
                                             <td>
                                                 <select name="team[{{ $index }}][age_category]" class="form-control form-control-sm">
-                                                    <option value="Adult" {{ $member->age_category == 'Adult' ? 'selected' : '' }}>Adult</option>
-                                                    <option value="Children" {{ $member->age_category == 'Children' ? 'selected' : '' }}>Children</option>
-                                                    <option value="Infant" {{ $member->age_category == 'Infant' ? 'selected' : '' }}>Infant</option>
+                                                    <option value="Adult" {{ old('team.'.$index.'.age_category', $member->age_category) == 'Adult' ? 'selected' : '' }}>Adult</option>
+                                                    <option value="Children" {{ old('team.'.$index.'.age_category', $member->age_category) == 'Children' ? 'selected' : '' }}>Children</option>
                                                 </select>
                                             </td>
-                                            <td>
-                                                <input type="text" name="team[{{ $index }}][nid_or_passport]" class="form-control form-control-sm" value="{{ $member->nid_or_passport }}">
-                                            </td>
-                                            <td>
-                                                <input type="text" name="team[{{ $index }}][profession]" class="form-control form-control-sm" value="{{ $member->profession }}">
-                                            </td>
+                                            <td><input type="text" name="team[{{ $index }}][nid_or_passport]" class="form-control form-control-sm" value="{{ old('team.'.$index.'.nid_or_passport', $member->nid_or_passport) }}"></td>
+                                            <td><input type="text" name="team[{{ $index }}][profession]" class="form-control form-control-sm" value="{{ old('team.'.$index.'.profession', $member->profession) }}"></td>
                                         </tr>
                                         @endforeach
                                     </tbody>
@@ -148,13 +232,100 @@
 
                     <div class="mt-4 text-right">
                         <button type="submit" class="btn btn-primary btn-icon-split shadow">
-                            <span class="icon text-white-50"><i class="fas fa-check"></i></span>
-                            <span class="text">Update All Permit Records</span>
+                            <span class="icon text-white-50"><i class="fas fa-save"></i></span>
+                            <span class="text">Save All Changes</span>
                         </button>
                     </div>
-                </form>
+
+                </div>
             </div>
         </div>
     </div>
-</div>
+</form>
 @endsection
+
+@push('js')
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- Area Selection Logic ---
+        const selectAll = document.getElementById('selectAllAreas');
+        const checkboxes = document.querySelectorAll('.area-checkbox');
+
+        if(selectAll) {
+            selectAll.addEventListener('change', function() {
+                checkboxes.forEach(cb => cb.checked = selectAll.checked);
+            });
+        }
+
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                if (!this.checked) selectAll.checked = false;
+                if (document.querySelectorAll('.area-checkbox:checked').length === checkboxes.length) {
+                    selectAll.checked = true;
+                }
+            });
+        });
+
+        // --- Dynamic Vehicle Management ---
+        let vehicleIndex = {{ count($permit->vehicles) }};
+        const container = document.getElementById('vehicle-container');
+        const addBtn = document.getElementById('add-vehicle');
+
+        addBtn.addEventListener('click', function() {
+            const html = `
+                <div class="vehicle-row border-bottom mb-4 pb-3" data-index="${vehicleIndex}">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge badge-primary">New Vehicle</span>
+                        <button type="button" class="btn btn-sm btn-danger remove-vehicle">Remove</button>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-3">
+                            <label class="small font-weight-bold">Driver Name</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][driver_name]" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="small font-weight-bold">Driver Phone</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][driver_contact]" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="small font-weight-bold">Emergency Phone</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][driver_emergency_contact]" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3">
+                            <label class="small font-weight-bold">Driver NID</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][driver_nid]" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3 mt-2">
+                            <label class="small font-weight-bold">License No</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][driver_license_no]" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3 mt-2">
+                            <label class="small font-weight-bold">Blood Group</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][driver_blood_group]" class="form-control">
+                        </div>
+                        <div class="form-group col-md-3 mt-2">
+                            <label class="small font-weight-bold">Vehicle Ownership</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][vehicle_ownership]" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-3 mt-2">
+                            <label class="small font-weight-bold">Vehicle Reg No</label>
+                            <input type="text" name="vehicles[${vehicleIndex}][vehicle_reg_no]" class="form-control" required>
+                        </div>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            vehicleIndex++;
+        });
+
+        // Event Delegation for Remove Buttons
+        container.addEventListener('click', function(e) {
+            if (e.target.classList.contains('remove-vehicle')) {
+                if(confirm('Are you sure you want to remove this vehicle entry?')) {
+                    e.target.closest('.vehicle-row').remove();
+                }
+            }
+        });
+    });
+</script>
+@endpush

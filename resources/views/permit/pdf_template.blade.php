@@ -8,7 +8,6 @@
         header { position: fixed; top: -60px; left: 0px; right: 0px; height: 50px; }
         footer { position: fixed; bottom: -60px; left: 0px; right: 0px; height: 50px; }
         
-        /* Changed font to DejaVu Sans for Unicode Support */
         body { 
             font-family: 'DejaVu Sans', sans-serif; 
             font-size: 10px; 
@@ -36,25 +35,24 @@
         .pagenum:before { content: counter(page); }
         .status-badge { color: #198754; font-weight: bold; border: 1px solid #198754; padding: 2px 5px; border-radius: 3px; }
         
-        /* Defense Badge Style */
         .defense-badge { display: inline-block; background-color: #064e3b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 8px; margin-left: 10px; text-transform: uppercase; vertical-align: middle; }
 
         .instructions-box { margin-top: 20px; border: 1px solid #ccc; padding: 10px; font-size: 9px; page-break-inside: avoid; }
         .emergency-box { margin-top: 10px; background-color: #fff3f3; border: 1px solid #ebcccc; padding: 10px; color: #a94442; }
+        
+        /* New style for vehicle separation */
+        .vehicle-container { margin-bottom: 10px; border: 1px solid #ddd; padding: 5px; }
     </style>
 </head>
 
 @php
-    // 1. Fetch settings
     $settings = \App\Models\SiteSetting::pluck('value', 'key');
     
-    // 2. Calculation Logic
     $feePerAdult = (float) ($settings['permit_fee'] ?? 100); 
     $adultCount = $permit->teamMembers->where('age_category', 'Adult')->count();
     $childCount = $permit->teamMembers->where('age_category', 'Children')->count();
     $infantCount = $permit->teamMembers->where('age_category', 'Infant')->count();
     
-    // Logic for Defense Personnel
     if($permit->is_defense) {
         $totalAmount = $feePerAdult;
     } else {
@@ -63,14 +61,13 @@
 @endphp
 
 <body>
-
     <header>
         <div class="header-content">
             <table width="100%" style="border:none;">
                 <tr>
                     <td width="15%" style="border:none; text-align: left; vertical-align: middle;">
                         @if(isset($settings['site_logo']))
-                            <img src="{{ $settings['site_logo'] }}" style="height: 55px; width: auto;">
+                            <img src="{{ public_path($settings['site_logo']) }}" style="height: 55px; width: auto;">
                         @endif
                     </td>
                     <td width="85%" style="border:none; text-align: right; vertical-align: middle;">
@@ -85,7 +82,7 @@
     <footer>
         <table width="100%" style="border-top: 1px solid #ddd; padding-top: 5px;">
             <tr>
-               <td width="33%">Ref: {{ str_pad($permit->id, 8, '0', STR_PAD_LEFT) }}</td>
+               <td width="33%">Ref: {{ $permit->id }}</td>
                 <td width="33%" align="center">Page <span class="pagenum"></span></td>
                 <td width="33%" align="right">Printed: {{ date('d-m-Y H:i') }}</td>
             </tr>
@@ -97,15 +94,9 @@
         <table class="info-table">
             <tr>
                 <td width="50%"><span class="label">Group Name</span> {{ $permit->group_name }}</td>
-               <td width="50%">
+                <td width="50%">
                     <span class="label">Restricted Areas</span> 
-                    @if($permit->areas->count() > 0)
-                        <strong style="color: #198754;">
-                            {{ $permit->areas->pluck('name')->implode(', ') }}
-                        </strong>
-                    @else
-                        <span style="color: red;">No Areas Selected</span>
-                    @endif
+                    <strong style="color: #198754;">{{ $permit->areas->pluck('name')->implode(', ') }}</strong>
                 </td>
             </tr>
             <tr>
@@ -120,9 +111,7 @@
 
         <div class="section-title">
             Lead Applicant Details 
-            @if($permit->is_defense)
-                <span class="defense-badge">Defense Personnel</span>
-            @endif
+            @if($permit->is_defense) <span class="defense-badge">Defense Personnel</span> @endif
         </div>
         <table class="info-table">
             <tr>
@@ -132,23 +121,26 @@
             </tr>
         </table>
 
-        <div class="section-title">Driver & Vehicle Information</div>
-        <table class="info-table">
-            <tr>
-                <td width="33%"><span class="label">Driver Name</span> {{ $permit->driver_name }}</td>
-                <td width="33%"><span class="label">License No.</span> {{ $permit->driver_license_no }}</td>
-                <td width="33%"><span class="label">Driver NID</span> {{ $permit->driver_nid }}</td>
-            </tr>
-            <tr>
-                <td><span class="label">Driver Contact</span> {{ $permit->driver_contact }}</td>
-                <td><span class="label">Blood Group</span> {{ $permit->driver_blood_group }}</td>
-                <td><span class="label">Emergency Contact</span> {{ $permit->driver_emergency_contact }}</td>
-            </tr>
-            <tr>
-                <td><span class="label">Vehicle Type</span> {{ $permit->vehicle_ownership }}</td>
-                <td colspan="2"><span class="label">Vehicle Registration No.</span> {{ $permit->vehicle_reg_no }}</td>
-            </tr>
-        </table>
+        <div class="section-title">Authorized Vehicles & Drivers (Total: {{ $permit->vehicles->count() }})</div>
+        @foreach($permit->vehicles as $index => $vehicle)
+        <div class="vehicle-container">
+            <table class="info-table" style="margin-top: 0; border: none;">
+                <tr>
+                    <td colspan="3" style="background: #f8f9fa; font-weight: bold;">Vehicle #{{ $index + 1 }}</td>
+                </tr>
+                <tr>
+                    <td width="33%"><span class="label">Driver Name</span> {{ $vehicle->driver_name }}</td>
+                    <td width="33%"><span class="label">License No.</span> {{ $vehicle->driver_license_no }}</td>
+                    <td width="33%"><span class="label">Driver NID</span> {{ $vehicle->driver_nid }}</td>
+                </tr>
+                <tr>
+                    <td><span class="label">Driver Contact</span> {{ $vehicle->driver_contact }}</td>
+                    <td><span class="label">Vehicle Ownership</span> {{ $vehicle->vehicle_ownership }}</td>
+                    <td><span class="label">Registration No.</span> {{ $vehicle->vehicle_reg_no }}</td>
+                </tr>
+            </table>
+        </div>
+        @endforeach
 
         <div class="section-title">Verified Team Members (Total: {{ $permit->total_members }})</div>
         <table class="member-table">
@@ -162,20 +154,15 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($permit->teamMembers as $member)
+                @foreach($permit->teamMembers as $member)
                 <tr>
-                    <td>
-                        <strong>{{ $member->name }}</strong><br>
-                        <small style="color: #198754; font-weight: bold;">{{ $member->age_category }}</small>
-                    </td>
+                    <td><strong>{{ $member->name }}</strong><br><small style="color: #198754;">{{ $member->age_category }}</small></td>
                     <td>{{ $member->age }} Yrs | {{ $member->blood_group }}</td>
                     <td>{{ $member->profession }}<br>{{ $member->nid_or_passport }}</td>
                     <td>{{ $member->contact_number }}</td>
                     <td>{{ $member->address }}</td>
                 </tr>
-                @empty
-                <tr><td colspan="5" align="center">No team members found.</td></tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
 
@@ -185,16 +172,13 @@
                 <td width="70%">
                     <strong style="font-size: 11px;">Fee Calculation:</strong><br>
                     @if($permit->is_defense)
-                        Defense Personnel Flat Fee: 1 x ৳{{ number_format($feePerAdult, 2) }}<br>
-                        <small>(Team Members: {{ $adultCount }} Adults, {{ $childCount }} Children)</small>
+                        Defense Personnel Flat Fee: 1 x ৳{{ number_format($feePerAdult, 2) }}
                     @else
-                        Adults: {{ $adultCount }} x ৳{{ number_format($feePerAdult, 2) }}<br>
-                        Children: {{ $childCount }} (Free)<br>
-                        Infants: {{ $infantCount }} (Free)
+                        Adults: {{ $adultCount }} x ৳{{ number_format($feePerAdult, 2) }} | Children: {{ $childCount }} (Free)
                     @endif
                 </td>
                 <td width="30%" class="total-box">
-                    <span style="font-size: 10px; text-transform: uppercase;">Total Amount Paid</span><br>
+                    <span style="font-size: 10px;">Total Paid</span><br>
                     <span style="font-size: 18px; font-weight: bold;">৳{{ number_format($totalAmount, 2) }}</span>
                 </td>
             </tr>
@@ -203,26 +187,24 @@
         <div class="qr-section">
             <table width="100%" style="border:none;">
                 <tr>
-                    <td width="50%" style="border:none;">
+                    <td width="70%" style="border:none;">
                         <h3 style="color: #198754; margin: 0;">OFFICIAL VERIFICATION</h3>
-                        <p style="font-size: 9px; margin: 5px 0;">Scan the QR code to verify this permit's authenticity.</p>
+                        <p style="font-size: 9px;">Scan the QR code to verify this permit's authenticity.</p>
+                        <div class="instructions-box">
+                            <strong>Instructions:</strong><br>
+                            {{ $settings['permit_instructions'] ?? 'Standard restricted area rules apply.' }}
+                        </div>
                     </td>
-                  <td width="50%" style="border:none; text-align: right;">
-                    <br>
-                        <img src="data:image/png;base64, {!! $qrCode !!}" style="height: 180px; width: 180px; border: 1px solid #eee; padding: 5px;">
+                    <td width="30%" style="border:none; text-align: right;">
+                        <img src="data:image/png;base64, {!! $qrCode !!}" style="height: 120px; width: 120px; border: 1px solid #eee; padding: 5px;">
                     </td>
                 </tr>
             </table>
         </div>
 
-        <div class="instructions-box">
-            <h3 style="color: #198754; margin-top: 0;">Instructions:</h3>
-            <div style="white-space: pre-line;">{{ $settings['permit_instructions'] ?? 'Standard restricted area rules apply.' }}</div>
-        </div>
-
         <div class="emergency-box">
             <h3 style="color: #d9534f; margin-top: 0;">In Case of Emergency:</h3>
-            <div style="white-space: pre-line;">{{ $settings['emergency_contacts'] ?? 'Please contact the local authorities.' }}</div>
+            <div>{{ $settings['emergency_contacts'] ?? 'Please contact the local authorities.' }}</div>
         </div>
     </main>
 </body>

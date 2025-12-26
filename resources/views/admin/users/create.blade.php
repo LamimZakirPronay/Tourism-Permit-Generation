@@ -16,6 +16,7 @@
         .form-control, .form-select { border-radius: 8px; padding: 0.6rem 1rem; border: 1px solid #e2e8f0; transition: all 0.2s; }
         .form-control:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         .section-title { font-size: 0.95rem; letter-spacing: 0.05em; color: #64748b; margin-bottom: 1.5rem; }
+        .invalid-feedback { font-size: 0.75rem; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -49,6 +50,23 @@
                     <p class="text-muted small mb-0">Complete all fields to initialize the military system profile.</p>
                 </div>
 
+                {{-- ERROR ALERT BLOCK --}}
+                @if ($errors->any())
+                    <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4">
+                        <div class="d-flex">
+                            <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+                            <div>
+                                <h6 class="fw-bold mb-1">Registration Failed</h6>
+                                <ul class="mb-0 small">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="card main-card p-4 p-md-5">
                     <form action="{{ route('admin.users.store') }}" method="POST">
                         @csrf
@@ -57,27 +75,38 @@
                         <div class="row g-4 mb-5">
                             <div class="col-md-4">
                                 <label class="form-label">Personal No (BA/BJO/No)</label>
-                                <input type="text" name="ba_no" class="form-control" placeholder="e.g. BA-1234" value="{{ old('ba_no') }}" required>
+                                <input type="text" name="ba_no" class="form-control @error('ba_no') is-invalid @enderror" placeholder="e.g. BA-1234" value="{{ old('ba_no') }}" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Rank</label>
-                                <select name="rank" class="form-select" required>
+                                <select name="rank" class="form-select @error('rank') is-invalid @enderror" required>
                                     <option value="">Select Rank</option>
                                     <optgroup label="Commissioned Officers">
-                                        <option>General</option><option>Lt Gen</option><option>Maj Gen</option><option>Brig Gen</option>
-                                        <option>Col</option><option>Lt Col</option><option>Major</option><option>Captain</option>
-                                        <option>Lieutenant</option><option>2nd Lt</option>
+                                        <option {{ old('rank') == 'General' ? 'selected' : '' }}>General</option>
+                                        <option {{ old('rank') == 'Lt Gen' ? 'selected' : '' }}>Lt Gen</option>
+                                        <option {{ old('rank') == 'Maj Gen' ? 'selected' : '' }}>Maj Gen</option>
+                                        <option {{ old('rank') == 'Brig Gen' ? 'selected' : '' }}>Brig Gen</option>
+                                        <option {{ old('rank') == 'Col' ? 'selected' : '' }}>Col</option>
+                                        <option {{ old('rank') == 'Lt Col' ? 'selected' : '' }}>Lt Col</option>
+                                        <option {{ old('rank') == 'Major' ? 'selected' : '' }}>Major</option>
+                                        <option {{ old('rank') == 'Captain' ? 'selected' : '' }}>Captain</option>
+                                        <option {{ old('rank') == 'Lieutenant' ? 'selected' : '' }}>Lieutenant</option>
+                                        <option {{ old('rank') == '2nd Lt' ? 'selected' : '' }}>2nd Lt</option>
                                     </optgroup>
                                     <optgroup label="JCOs/NCOs/ORs">
-                                        <option>Master Warrant Officer</option><option>Senior Warrant Officer</option>
-                                        <option>Warrant Officer</option><option>Sergeant</option>
-                                        <option>Corporal</option><option>Lance Corporal</option><option>Sainik</option>
+                                        <option {{ old('rank') == 'Master Warrant Officer' ? 'selected' : '' }}>Master Warrant Officer</option>
+                                        <option {{ old('rank') == 'Senior Warrant Officer' ? 'selected' : '' }}>Senior Warrant Officer</option>
+                                        <option {{ old('rank') == 'Warrant Officer' ? 'selected' : '' }}>Warrant Officer</option>
+                                        <option {{ old('rank') == 'Sergeant' ? 'selected' : '' }}>Sergeant</option>
+                                        <option {{ old('rank') == 'Corporal' ? 'selected' : '' }}>Corporal</option>
+                                        <option {{ old('rank') == 'Lance Corporal' ? 'selected' : '' }}>Lance Corporal</option>
+                                        <option {{ old('rank') == 'Sainik' ? 'selected' : '' }}>Sainik</option>
                                     </optgroup>
                                 </select>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Corps</label>
-                                <input type="text" name="corps" class="form-control" placeholder="e.g. Infantry / ASC" value="{{ old('corps') }}" required>
+                                <input type="text" name="corps" class="form-control @error('corps') is-invalid @enderror" placeholder="e.g. Infantry / ASC" value="{{ old('corps') }}" required>
                             </div>
                         </div>
 
@@ -85,26 +114,26 @@
                         <div class="row g-4 mb-5">
                             <div class="col-md-6">
                                 <label class="form-label">Full Name</label>
-                                <input type="text" name="name" class="form-control" placeholder="Name as per Service Record" value="{{ old('name') }}" required>
+                                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" placeholder="Name as per Service Record" value="{{ old('name') }}" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Official Email</label>
-                                <input type="email" name="email" class="form-control" placeholder="officer@army.mil.bd" value="{{ old('email') }}" required>
+                                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" placeholder="officer@army.mil.bd" value="{{ old('email') }}" required>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Current Unit</label>
-                                <input type="text" name="unit" class="form-control" placeholder="e.g. 12 Bengal" value="{{ old('unit') }}">
+                                <input type="text" name="unit" class="form-control @error('unit') is-invalid @enderror" placeholder="e.g. 12 Bengal" value="{{ old('unit') }}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Appointment</label>
-                                <input type="text" name="appointment" class="form-control" placeholder="e.g. Adjutant / QM" value="{{ old('appointment') }}">
+                                <input type="text" name="appointment" class="form-control @error('appointment') is-invalid @enderror" placeholder="e.g. Adjutant / QM" value="{{ old('appointment') }}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Blood Group</label>
-                                <select name="blood_group" class="form-select">
+                                <select name="blood_group" class="form-select @error('blood_group') is-invalid @enderror">
                                     <option value="">Select Group</option>
                                     @foreach(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $bg)
-                                        <option value="{{ $bg }}">{{ $bg }}</option>
+                                        <option value="{{ $bg }}" {{ old('blood_group') == $bg ? 'selected' : '' }}>{{ $bg }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -114,14 +143,17 @@
                         <div class="row g-4 mb-5">
                             <div class="col-md-6">
                                 <label class="form-label">System Role</label>
-                                <select name="role" class="form-select">
-                                    <option value="staff">Staff Member (Data Entry)</option>
-                                    <option value="admin">Super Admin (Management)</option>
+                                <select name="role" class="form-select @error('role') is-invalid @enderror">
+                                    <option value="staff" {{ old('role') == 'staff' ? 'selected' : '' }}>Staff Member (Data Entry)</option>
+                                    <option value="admin" {{ old('role') == 'admin' ? 'selected' : '' }}>Super Admin (Management)</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Account Password</label>
-                                <input type="password" name="password" class="form-control" placeholder="Minimum 8 characters" required>
+                                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Minimum 8 characters" required>
+                                @error('password')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
