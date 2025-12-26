@@ -5,10 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Area;
 use App\Models\Permit;
 use App\Models\SiteSetting;
-use App\Models\TeamMember;
 use App\Models\TourGuide;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
@@ -231,61 +229,83 @@ class TourismPermitController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $permit = Permit::findOrFail($id);
+        $permit = \App\Models\Permit::findOrFail($id);
 
-        $request->validate([
+        $validatedData = $request->validate([
             'group_name' => 'required|string|max:255',
-            'area_ids' => 'required|array|min:1',
-            'area_ids.*' => 'exists:areas,id',
-            'tour_guide_id' => 'required|exists:tour_guides,id',
+            'leader_name' => 'required|string|max:255',
+            'leader_nid' => 'required|string',
+            'email' => 'required|email',
+            'contact_number' => 'required|string',
+            'status' => 'required|in:to arrive,arrived,exited,cancelled',
+            'payment_status' => 'required|boolean',
             'arrival_datetime' => 'required|date',
             'departure_datetime' => 'required|date|after:arrival_datetime',
+            'area_ids' => 'required|array',
+
+            // Vehicles Validation
+            'vehicles' => 'required|array',
+            'vehicles.*.driver_name' => 'required|string',
+            'vehicles.*.driver_contact' => 'required|string',
+            'vehicles.*.vehicle_ownership' => 'required|string',
+            'vehicles.*.vehicle_reg_no' => 'required|string',
+
+            // Team Validation
             'team' => 'required|array',
-        ], [
-            'area_ids.required' => 'You must select at least one restricted area.',
+            'team.*.name' => 'required|string',
+            'team.*.age' => 'required|integer',
+            'team.*.gender' => 'required|string',
+            'team.*.age_category' => 'required|string',
+            'team.*.nid_or_passport' => 'required|string',
         ]);
 
-        return DB::transaction(function () use ($request, $permit) {
-            $permit->areas()->sync($request->area_ids);
-
+        return \DB::transaction(function () use ($request, $permit) {
+            // 1. Update Main Permit
             $permit->update([
                 'group_name' => $request->group_name,
                 'leader_name' => $request->leader_name,
                 'leader_nid' => $request->leader_nid,
                 'email' => $request->email,
                 'contact_number' => $request->contact_number,
-                'tour_guide_id' => $request->tour_guide_id,
-                'arrival_datetime' => Carbon::parse($request->arrival_datetime)->toDateTimeString(),
-                'departure_datetime' => Carbon::parse($request->departure_datetime)->toDateTimeString(),
                 'status' => $request->status,
-                'payment_status' => (int) $request->payment_status,
-                'vehicle_ownership' => $request->vehicle_ownership,
-                'vehicle_reg_no' => $request->vehicle_reg_no,
-                'driver_name' => $request->driver_name,
-                'driver_contact' => $request->driver_contact,
-                'driver_emergency_contact' => $request->driver_emergency_contact,
-                'driver_blood_group' => $request->driver_blood_group,
-                'driver_license_no' => $request->driver_license_no,
-                'driver_nid' => $request->driver_nid,
+                'payment_status' => $request->payment_status,
+                'arrival_datetime' => $request->arrival_datetime,
+                'departure_datetime' => $request->departure_datetime,
             ]);
 
-            if ($request->has('team')) {
-                foreach ($request->team as $memberData) {
-                    if (isset($memberData['id'])) {
-                        TeamMember::where('id', $memberData['id'])->update([
-                            'name' => $memberData['name'],
-                            'fathers_name' => $memberData['fathers_name'] ?? null,
-                            'age' => $memberData['age'] ?? null,
-                            'gender' => $memberData['gender'] ?? 'Male',
-                            'age_category' => $memberData['age_category'] ?? 'Adult',
-                            'nid_or_passport' => $memberData['nid_or_passport'] ?? null,
-                            'profession' => $memberData['profession'] ?? null,
-                        ]);
-                    }
-                }
+            // 2. Sync Areas
+            $permit->areas()->sync($request->area_ids);
+
+            // 3. Update Vehicles (Delete old, Insert new is safest for dynamic rows)
+            $permit->vehicles()->delete();
+            foreach ($request->vehicles as $v) {
+                $permit->vehicles()->create([
+                    'driver_name' => $v['driver_name'],
+                    'driver_contact' => $v['driver_contact'],
+                    'driver_emergency_contact' => $v['driver_emergency_contact'] ?? null,
+                    'driver_nid' => $v['driver_nid'] ?? null,
+                    'driver_license_no' => $v['driver_license_no'] ?? null,
+                    'driver_blood_group' => $v['driver_blood_group'] ?? null,
+                    'vehicle_ownership' => $v['vehicle_ownership'],
+                    'vehicle_reg_no' => $v['vehicle_reg_no'],
+                ]);
             }
 
-            return redirect()->route('admin.permit.index')->with('success', 'Permit updated successfully with areas!');
+            // 4. Update Team Members
+            $permit->teamMembers()->delete();
+            foreach ($request->team as $m) {
+                $permit->teamMembers()->create([
+                    'name' => $m['name'],
+                    'fathers_name' => $m['fathers_name'] ?? '',
+                    'age' => $m['age'],
+                    'gender' => $m['gender'],
+                    'age_category' => $m['age_category'],
+                    'nid_or_passport' => $m['nid_or_passport'],
+                    'profession' => $m['profession'] ?? null,
+                ]);
+            }
+
+            return redirect()->route('admin.permit.index')->with('success', 'Permit updated successfully!');
         });
     }
 
